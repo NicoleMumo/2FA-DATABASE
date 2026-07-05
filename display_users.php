@@ -16,8 +16,24 @@ if ($stmt === null) {
     exit('Unable to read users.');
 }
 
-echo '<h2>Registered Users</h2>';
+$html = '<div class="page-shell"><div class="card"><h1>Registered users</h1><p class="subtitle">A quick view of the accounts stored in the demo database.</p><ul class="user-list">';
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    echo 'Username: ' . htmlspecialchars($row['username']) . ', Email: ' . htmlspecialchars($row['email']) . ', Created At: ' . htmlspecialchars($row['created_at']) . '<br>';
+    $html .= '<li><strong>' . htmlspecialchars($row['username']) . '</strong><span>' . htmlspecialchars($row['email']) . '</span><small>' . htmlspecialchars($row['created_at']) . '</small></li>';
 }
+$html .= '</ul><p class="footer-link"><a href="index.html">Back to sign up</a></p></div></div>';
+
+echo $html;
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registered Users</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<?php echo $content ?? ''; ?>
+</body>
+</html>
+
