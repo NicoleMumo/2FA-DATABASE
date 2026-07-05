@@ -2,17 +2,22 @@
 require_once 'Database.php';
 require_once 'User.php';
 
-// Database connection
 $database = new Database();
 $db = $database->getConnection();
 
-// Create user object and fetch data
+if ($db === null) {
+    exit('Database connection failed.');
+}
+
 $user = new User($db);
 $stmt = $user->read();
 
-echo "<h2>Registered Users</h2>";
+if ($stmt === null) {
+    exit('Unable to read users.');
+}
+
+echo '<h2>Registered Users</h2>';
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    extract($row);
-    echo "Username: {$username}, Email: {$email}, Created At: {$created_at}<br>";
+    echo 'Username: ' . htmlspecialchars($row['username']) . ', Email: ' . htmlspecialchars($row['email']) . ', Created At: ' . htmlspecialchars($row['created_at']) . '<br>';
 }
 ?>

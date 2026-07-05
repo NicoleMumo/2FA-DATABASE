@@ -1,35 +1,40 @@
 <?php
 require_once 'Database.php';
 
-function send2FACode($email, $code) {
-    $subject = "Your 2FA Code";
-    $message = "Your two-factor authentication code is: $code";
-    $headers = "From: no-reply@yourdomain.com";
-    mail($email, $subject, $message, $headers); // PHP's mail function to send email
+session_start();
+
+$database = new Database();
+$pdo = $database->getConnection();
+
+if ($pdo === null) {
+    exit('Database connection failed.');
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+function send2FACode($email, $code) {
+    $logFile = __DIR__ . '/2fa.log';
+    $entry = date('Y-m-d H:i:s') . ' | ' . $email . ' | ' . $code . PHP_EOL;
+    file_put_contents($logFile, $entry, FILE_APPEND);
+}
 
-    // Fetch user from the database
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username");
+$requestMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? (empty($_POST) ? 'GET' : 'POST'));
+
+if ($requestMethod === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE username = :username');
     $stmt->execute([':username' => $username]);
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password'])) {
-        // Generate a random 6-digit 2FA code
         $code = rand(100000, 999999);
 
-        // Save the 2FA code temporarily in the session
-        session_start();
         $_SESSION['2fa_code'] = $code;
         $_SESSION['username'] = $username;
 
-        // Send the 2FA code to the user's email
         send2FACode($user['email'], $code);
 
-        // Prompt for 2FA code
+        echo '<p>Your 2FA code is: <strong>' . $code . '</strong> (demo mode; it has also been written to 2fa.log)</p>';
         echo '<form method="POST" action="verify_2fa.php">
                   <label for="2fa_code">Enter the 2FA code sent to your email:</label>
                   <input type="text" name="2fa_code" required>
@@ -38,5 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         echo 'Invalid credentials';
     }
+} else {
+    echo '<form method="POST" action="user.php">
+              <label for="username">Username:</label>
+              <input type="text" name="username" required><br>
+              <label for="password">Password:</label>
+              <input type="password" name="password" required><br>
+              <button type="submit">Login</button>
+          </form>';
 }
 ?>
